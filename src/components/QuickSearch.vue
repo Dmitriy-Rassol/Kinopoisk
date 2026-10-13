@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import LoadingSkeleton from './LoadingSkeleton.vue'
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { searchMovies, searchPeople, title, personName } from '../api'
@@ -42,10 +43,10 @@ function hideImage(event: Event) { (event.target as HTMLImageElement).style.visi
         aria-autocomplete="list" :aria-expanded="visible" aria-controls="search-suggestions"
         :aria-activedescendant="active >= 0 ? 'suggestion-' + active : undefined" autocomplete="off"
         placeholder="Фильмы, сериалы, актёры…" type="search" @input="open = true" @focus="open = true"
-        @keydown.down.prevent="move(1)" @keydown.up.prevent="move(-1)"><button type="submit">Найти ↗</button>
+        @keydown.down.prevent="move(1)" @keydown.up.prevent="move(-1)"><button type="submit">Найти</button>
     </form>
     <div v-if="visible" class="suggestions">
-      <p v-if="loading" class="suggestion-message" role="status">Ищем…</p>
+      <LoadingSkeleton v-if="loading" variant="search" :count="4" />
       <p v-if="message" class="suggestion-message" role="status">{{ message }}</p>
       <div id="search-suggestions" role="listbox" aria-label="Подсказки поиска">
         <template v-for="(item, index) in items" :key="item.key">

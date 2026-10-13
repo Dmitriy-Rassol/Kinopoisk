@@ -1,10 +1,22 @@
 <script setup lang="ts">
+import CustomSelect from '../components/CustomSelect.vue'
+import LoadingSkeleton from '../components/LoadingSkeleton.vue'
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getMovies, searchMovies, errorMessage, searchPeople, type Person, type Movie } from '../api'
 import MovieCard from '../components/MovieCard.vue'
 import PersonCard from '../components/PersonCard.vue'
 import QuickSearch from '../components/QuickSearch.vue'
+import CinemaHero from '../components/CinemaHero.vue'
+const genreOptions = [
+  { value: '', label: 'Все жанры' },
+  ...['драма', 'комедия', 'боевик', 'триллер', 'фантастика', 'фэнтези', 'детектив', 'ужасы', 'приключения', 'мелодрама'].map(value => ({ value, label: value.charAt(0).toUpperCase() + value.slice(1) })),
+]
+const sortOptions = [
+  { value: 'votes.kp', label: 'По популярности' },
+  { value: 'rating.kp', label: 'По рейтингу' },
+  { value: 'year', label: 'Сначала новые' },
+]
 const route = useRoute(), router = useRouter()
 const people = ref<Person[]>([]), movies = ref<Movie[]>([])
 
@@ -50,12 +62,14 @@ watch(() => route.query, () => { void load() }, { immediate: true })
 onBeforeUnmount(() => controller?.abort())
 </script>
 <template>
-  <section class="hero"><div class="hero-copy"><span class="eyebrow">КИНО НА ЛЮБОЕ НАСТРОЕНИЕ</span><h1>Что посмотрим<br><em>сегодня?</em></h1><p>Истории, которые остаются с вами.<br>Находите любимое и открывайте новое.</p><QuickSearch /></div><div class="hero-art" aria-hidden="true"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="film-ticket"><span>БИЛЕТ В ДРУГОЙ МИР</span><strong>КИНО<br>НАЧИНАЕТСЯ</strong><div class="ticket-line"></div><small>РЯД 01 <b>МЕСТО 01</b></small><div class="barcode"></div></div><span class="art-caption">ТОЛЬКО ВЫ И ХОРОШАЯ ИСТОРИЯ</span></div></section>
-  <section class="catalog"><div class="section-heading"><div><span class="eyebrow">ВАША СЛЕДУЮЩАЯ ИСТОРИЯ</span><h2>{{ searching ? `Поиск: «${route.query.q}»` : 'Откройте мир кино' }}</h2></div><span v-if="!loading && !error && !peopleError" class="muted">{{ (total + peopleTotal).toLocaleString('ru-RU') }} результатов</span></div>
-    <div v-if="!searching" class="filters"><div class="tabs"><button v-for="tab in [{ label: 'Всё', value: '' }, { label: 'Фильмы', value: 'movie' }, { label: 'Сериалы', value: 'tv-series' }, { label: 'Мультфильмы', value: 'cartoon' }]" :key="tab.value" :class="{ active: kind === tab.value }" :aria-pressed="kind === tab.value" @click="update({ type: tab.value || undefined })">{{ tab.label }}</button></div><div class="selects"><select :value="genre" aria-label="Жанр" @change="update({ genre: ($event.target as HTMLSelectElement).value || undefined })"><option value="">Все жанры</option><option v-for="item in ['драма', 'комедия', 'боевик', 'триллер', 'фантастика', 'фэнтези', 'детектив', 'ужасы', 'приключения', 'мелодрама']" :key="item">{{ item }}</option></select><select :value="sort" aria-label="Сортировка" @change="update({ sort: ($event.target as HTMLSelectElement).value })"><option value="votes.kp">По популярности</option><option value="rating.kp">По рейтингу</option><option value="year">Сначала новые</option></select></div></div>
+  <section class="discovery"><div><h1>Фильмы и сериалы</h1></div><div class="discovery-search"><QuickSearch /></div></section>
+  <CinemaHero v-if="!searching" />
+  <section v-if="!searching" class="collections" aria-label="Жанры"><span>Что посмотреть</span><RouterLink :to="{ path: '/', query: { genre: 'фантастика' }, hash: '#catalog' }">Фантастика</RouterLink><RouterLink :to="{ path: '/', query: { genre: 'триллер' }, hash: '#catalog' }">Триллеры</RouterLink><RouterLink :to="{ path: '/', query: { genre: 'комедия' }, hash: '#catalog' }">Комедии</RouterLink></section>
+  <section id="catalog" class="catalog"><div class="section-heading"><div><h2>{{ searching ? `Поиск: «${route.query.q}»` : 'Популярные фильмы' }}</h2></div><span v-if="!loading && !error && !peopleError" class="muted">{{ (total + peopleTotal).toLocaleString('ru-RU') }} результатов</span></div>
+    <div v-if="!searching" class="filters"><div class="tabs"><button v-for="tab in [{ label: 'Всё', value: '' }, { label: 'Фильмы', value: 'movie' }, { label: 'Сериалы', value: 'tv-series' }, { label: 'Мультфильмы', value: 'cartoon' }]" :key="tab.value" :class="{ active: kind === tab.value }" :aria-pressed="kind === tab.value" @click="update({ type: tab.value || undefined })">{{ tab.label }}</button></div><div class="selects"><CustomSelect :model-value="genre" label="Жанр" :options="genreOptions" @update:model-value="update({ genre: $event || undefined })" /><CustomSelect :model-value="sort" label="Сортировка" :options="sortOptions" @update:model-value="update({ sort: $event })" /></div></div>
     <button v-else-if="searching" class="text-button" @click="update({ q: undefined, scope: undefined })">← Вернуться к каталогу</button>
 
-    <div v-if="loading" class="movie-grid" aria-label="Загрузка результатов" aria-busy="true"><div v-for="i in 10" :key="i" class="skeleton"></div></div>
+    <div v-if="loading"><LoadingSkeleton variant="cards" :count="20" /><section v-if="searching" class="people-results"><h2>Актёры и персоны</h2><LoadingSkeleton variant="cards" :count="5" /></section></div>
     <template v-else>
       <section aria-label="Фильмы и сериалы">
         <h2 v-if="searching">Фильмы и сериалы <span v-if="!error" class="muted">· {{ total.toLocaleString('ru-RU') }}</span></h2>
@@ -74,4 +88,3 @@ onBeforeUnmount(() => controller?.abort())
     </template>
   </section>
 </template>
-

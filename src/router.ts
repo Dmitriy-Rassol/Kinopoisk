@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 export default createRouter({ history: createWebHistory(), scrollBehavior: (to, from, savedPosition) => {
   if (savedPosition) return savedPosition
+  if (to.hash === '#catalog') return { el: '#catalog', top: 24 }
   if (to.path === from.path) return false
   return { top: 0 }
 }, routes: [
@@ -10,5 +11,6 @@ export default createRouter({ history: createWebHistory(), scrollBehavior: (to, 
   { path: '/watchlist', component: () => import('./views/WatchlistView.vue') },
   { path: '/:pathMatch(.*)*', component: () => import('./views/NotFoundView.vue') },
 ] })
+
 
 
