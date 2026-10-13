@@ -4,9 +4,10 @@ import { useRoute, useRouter } from 'vue-router'
 import { getMovies, searchMovies, errorMessage, searchPeople, type Person, type Movie } from '../api'
 import MovieCard from '../components/MovieCard.vue'
 import PersonCard from '../components/PersonCard.vue'
+import QuickSearch from '../components/QuickSearch.vue'
 const route = useRoute(), router = useRouter()
 const people = ref<Person[]>([]), movies = ref<Movie[]>([])
-const query = ref(String(route.query.q || ''))
+
 const loading = ref(false), error = ref(''), peopleError = ref('')
 const pages = ref(0), total = ref(0), peoplePages = ref(0), peopleTotal = ref(0)
 const validPage = (value: unknown) => { const number = Number(value); return Number.isSafeInteger(number) && number > 0 ? number : 1 }
@@ -19,7 +20,7 @@ const searching = computed(() => !!String(route.query.q || '').trim())
 let controller: AbortController | undefined
 function update(values: Record<string, string | undefined>) { router.push({ path: '/', query: { ...route.query, page: undefined, peoplePage: undefined, scope: undefined, ...values } }) }
 function paginate(key: 'page' | 'peoplePage', value: number) { router.push({ path: '/', query: { ...route.query, scope: undefined, [key]: String(value) } }) }
-function search() { update({ q: query.value.trim() || undefined, type: undefined, genre: undefined }) }
+
 async function load() {
   controller?.abort(); const current = new AbortController(); controller = current
   loading.value = true; error.value = ''; peopleError.value = ''; movies.value = []; people.value = []
@@ -45,11 +46,11 @@ async function load() {
   } catch (e) { if (!current.signal.aborted) error.value = errorMessage(e) }
   finally { if (!current.signal.aborted) loading.value = false }
 }
-watch(() => route.query, () => { query.value = String(route.query.q || ''); void load() }, { immediate: true })
+watch(() => route.query, () => { void load() }, { immediate: true })
 onBeforeUnmount(() => controller?.abort())
 </script>
 <template>
-  <section class="hero"><div class="hero-copy"><span class="eyebrow">КИНО НА ЛЮБОЕ НАСТРОЕНИЕ</span><h1>Что посмотрим<br><em>сегодня?</em></h1><p>Истории, которые остаются с вами.<br>Находите любимое и открывайте новое.</p><form class="search" @submit.prevent="search"><span aria-hidden="true">⌕</span><input v-model="query" aria-label="Название фильма или имя актёра" placeholder="Фильм, сериал, актёр или режиссёр…" type="search"><button type="submit">Найти <span aria-hidden="true">↗</span></button></form></div><div class="hero-art" aria-hidden="true"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="film-ticket"><span>БИЛЕТ В ДРУГОЙ МИР</span><strong>КИНО<br>НАЧИНАЕТСЯ</strong><div class="ticket-line"></div><small>РЯД 01 <b>МЕСТО 01</b></small><div class="barcode"></div></div><span class="art-caption">ТОЛЬКО ВЫ И ХОРОШАЯ ИСТОРИЯ</span></div></section>
+  <section class="hero"><div class="hero-copy"><span class="eyebrow">КИНО НА ЛЮБОЕ НАСТРОЕНИЕ</span><h1>Что посмотрим<br><em>сегодня?</em></h1><p>Истории, которые остаются с вами.<br>Находите любимое и открывайте новое.</p><QuickSearch /></div><div class="hero-art" aria-hidden="true"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="film-ticket"><span>БИЛЕТ В ДРУГОЙ МИР</span><strong>КИНО<br>НАЧИНАЕТСЯ</strong><div class="ticket-line"></div><small>РЯД 01 <b>МЕСТО 01</b></small><div class="barcode"></div></div><span class="art-caption">ТОЛЬКО ВЫ И ХОРОШАЯ ИСТОРИЯ</span></div></section>
   <section class="catalog"><div class="section-heading"><div><span class="eyebrow">ВАША СЛЕДУЮЩАЯ ИСТОРИЯ</span><h2>{{ searching ? `Поиск: «${route.query.q}»` : 'Откройте мир кино' }}</h2></div><span v-if="!loading && !error && !peopleError" class="muted">{{ (total + peopleTotal).toLocaleString('ru-RU') }} результатов</span></div>
     <div v-if="!searching" class="filters"><div class="tabs"><button v-for="tab in [{ label: 'Всё', value: '' }, { label: 'Фильмы', value: 'movie' }, { label: 'Сериалы', value: 'tv-series' }, { label: 'Мультфильмы', value: 'cartoon' }]" :key="tab.value" :class="{ active: kind === tab.value }" :aria-pressed="kind === tab.value" @click="update({ type: tab.value || undefined })">{{ tab.label }}</button></div><div class="selects"><select :value="genre" aria-label="Жанр" @change="update({ genre: ($event.target as HTMLSelectElement).value || undefined })"><option value="">Все жанры</option><option v-for="item in ['драма', 'комедия', 'боевик', 'триллер', 'фантастика', 'фэнтези', 'детектив', 'ужасы', 'приключения', 'мелодрама']" :key="item">{{ item }}</option></select><select :value="sort" aria-label="Сортировка" @change="update({ sort: ($event.target as HTMLSelectElement).value })"><option value="votes.kp">По популярности</option><option value="rating.kp">По рейтингу</option><option value="year">Сначала новые</option></select></div></div>
     <button v-else-if="searching" class="text-button" @click="update({ q: undefined, scope: undefined })">← Вернуться к каталогу</button>
@@ -73,3 +74,4 @@ onBeforeUnmount(() => controller?.abort())
     </template>
   </section>
 </template>
+
