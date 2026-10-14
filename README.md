@@ -180,3 +180,17 @@ npm run format:check
 import MovieCard from '@/components/MovieCard.vue'
 import { getMovie } from '@/api'
 ```
+
+## GitHub Pages
+
+В проекте есть workflow `.github/workflows/deploy.yml`: он собирает приложение и публикует только `dist/` при push в `main` или ручном запуске.
+
+1. В репозитории откройте **Settings → Pages → Build and deployment → Source** и выберите **GitHub Actions**.
+2. В **Settings → Secrets and variables → Actions** добавьте secret `VITE_API_KEY` с ключом PoiskKino. Локальный `.env.local` не отправляется на GitHub.
+3. Отправьте изменения в `main` или запустите **Deploy to GitHub Pages** во вкладке **Actions**.
+
+Базовый путь берётся из настроек Pages. Для Pages включены hash-маршруты: например, `/Kinopoisk/#/movie/123`. Они работают при обновлении страницы без серверного перенаправления. Локальная разработка продолжает использовать обычные пути.
+
+Для ручной сборки под подпапку задайте `VITE_BASE_PATH=/Kinopoisk/` и `VITE_ROUTER_MODE=hash` перед `npm run build`. Публикуйте содержимое `dist/`, а не исходный `index.html`.
+
+Secret защищает ключ в настройках репозитория, но переменная `VITE_API_KEY` всё равно попадает в браузерную сборку, как описано выше.

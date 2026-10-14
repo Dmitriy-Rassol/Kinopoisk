@@ -1,6 +1,9 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHistory, createWebHashHistory } from 'vue-router'
 export default createRouter({
-  history: createWebHistory(),
+  history:
+    import.meta.env.VITE_ROUTER_MODE === 'hash'
+      ? createWebHashHistory(import.meta.env.BASE_URL)
+      : createWebHistory(import.meta.env.BASE_URL),
   scrollBehavior: (to, from, savedPosition) => {
     if (savedPosition) return savedPosition
     if (to.hash === '#catalog') return { el: '#catalog', top: 24 }
