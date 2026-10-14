@@ -1,4 +1,4 @@
-# Кинотека
+[# Кинотека](https://dmitriy-rassol.github.io/Kinoteka)
 
 Каталог фильмов, сериалов и актёров на Vue 3 и TypeScript.
 Данные загружаются из [PoiskKino](https://poiskkino.dev/).
